@@ -24,6 +24,8 @@ interface ApiTicket {
   asset_tag: string | null
   priority: TicketPriority
   status: TicketStatus
+  status_label?: string | null
+  handled_by?: string | null
   created_at: string
   updated_at: string
   replies?: { id: number; author: string; message: string; created_at: string }[]
@@ -38,7 +40,7 @@ function toTicket(t: ApiTicket): HelpdeskTicket {
   const activity: TicketActivity[] = [{ id: 'created', kind: 'event', actor: 'system', actorLabel: 'System', message: 'Ticket submitted', createdAt: t.created_at }]
   for (const reply of t.replies ?? []) {
     const mine = reply.author === 'You'
-    activity.push({ id: `reply-${reply.id}`, kind: 'reply', actor: mine ? 'employee' : 'support', actorLabel: mine ? 'You' : 'IT Support', message: reply.message, createdAt: reply.created_at })
+    activity.push({ id: `reply-${reply.id}`, kind: 'reply', actor: mine ? 'employee' : 'support', actorLabel: mine ? 'You' : reply.author === 'IT support' ? 'IT Support' : reply.author, message: reply.message, createdAt: reply.created_at })
   }
   return {
     id: String(t.id),
@@ -48,6 +50,8 @@ function toTicket(t: ApiTicket): HelpdeskTicket {
     type: t.type,
     category: t.category,
     status: t.status,
+    statusLabel: t.status_label ?? undefined,
+    handledBy: t.handled_by ?? undefined,
     priority: t.priority,
     createdAt: t.created_at,
     updatedAt: t.updated_at,

@@ -10,7 +10,7 @@ import { useAdminList } from '@/hooks/useAdminList'
 import { useAsync } from '@/hooks/useAsync'
 import { useMutation } from '@/hooks/useMutation'
 import { formatDateTime } from '@/lib/format'
-import { claimTicket, getAdminTicket, getAdminTickets, replyToTicketAsStaff, updateTicket } from '@/services/admin/adminApi'
+import { claimTicket, getAdminTicket, getHublyStatus, retryHubly, getAdminTickets, replyToTicketAsStaff, updateTicket } from '@/services/admin/adminApi'
 import type { AdminRecord } from '@/types/admin'
 
 const opt = (values: string[]) => values.map((value) => ({ value, label: value.replace(/^./, (c) => c.toUpperCase()) }))
@@ -54,6 +54,10 @@ function TicketHandling({ initial }: { initial: AdminRecord }) {
   const replies = (ticket.replies ?? []) as AdminRecord[]
   const attachments = (ticket.attachments ?? []) as AdminRecord[]
   const closed = ['closed', 'cancelled'].includes(s(ticket, 'status'))
+  // When the Hubly link is on, Hubly is the master: this page is read-only and updates arrive from there.
+  const hubly = useAsync(getHublyStatus, [])
+  const managed = hubly.data?.enabled === true
+  const retry = useMutation((_: void) => retryHubly())
 
   const reload = async () => setTicket(await getAdminTicket(ticket.id))
   const take = async () => {
@@ -97,7 +101,7 @@ function TicketHandling({ initial }: { initial: AdminRecord }) {
               {replies.length === 0 && <li className="px-3 py-3 text-sm text-muted-foreground">No replies yet.</li>}
               {replies.map((r) => <li key={s(r, 'id')} className="px-3 py-2 text-sm"><p className="text-xs text-muted-foreground">{s(r, 'author')} · {formatDateTime(s(r, 'created_at'))}</p><p className="mt-1 whitespace-pre-line break-words">{s(r, 'message')}</p></li>)}
             </ul>
-            {closed ? <p className="mt-3 text-sm text-muted-foreground">This ticket is {s(ticket, 'status')}. Reopen it to reply.</p> : (
+            {managed ? <p className="mt-3 text-sm text-muted-foreground">Replies and notes are written in Hubly and appear here.</p> : closed ? <p className="mt-3 text-sm text-muted-foreground">This ticket is {s(ticket, 'status')}. Reopen it to reply.</p> : (
               <div className="mt-3 space-y-2">
                 {send.error && <p role="alert" className="text-sm text-destructive">{send.fieldErrors.message ?? send.error}</p>}
                 <label htmlFor="staff-reply" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Reply to the requester</label>
@@ -110,11 +114,25 @@ function TicketHandling({ initial }: { initial: AdminRecord }) {
 
         <aside aria-labelledby="h-h" className="space-y-3">
           <h2 id="h-h" className="border-b-2 border-primary pb-2 font-serif text-lg font-semibold text-primary">Handling</h2>
-          {!closed && !s(ticket, 'assigned_to') && (
+          {managed && (
+            <div className="space-y-2 border bg-white p-3 text-sm">
+              <p className="font-medium">Handled in Hubly{s(ticket, 'external_id') ? ` (${s(ticket, 'external_id')})` : ''}</p>
+              <p className="text-muted-foreground">Status: <strong>{s(ticket, 'status_label') || s(ticket, 'status')}</strong>{s(ticket, 'handled_by') ? <> · Handled by {s(ticket, 'handled_by')}</> : null}</p>
+              <p className="text-xs text-muted-foreground">Change the status, priority, owner and notes in Hubly. They appear here and the employee is notified.</p>
+              {(hubly.data?.waiting ?? 0) + (hubly.data?.failed ?? 0) > 0 && (
+                <div className="border-t pt-2 text-xs">
+                  <p className="text-amber-700">{hubly.data?.waiting} waiting to reach Hubly, {hubly.data?.failed} gave up.{hubly.data?.last_error ? ` Last problem: ${hubly.data.last_error}` : ''}</p>
+                  <Button type="button" size="sm" variant="outline" className="mt-1 bg-white" disabled={retry.submitting} onClick={async () => { await retry.mutate(); hubly.retry() }}>{retry.submitting ? 'Trying…' : 'Try again now'}</Button>
+                </div>
+              )}
+            </div>
+          )}
+          {!managed && !closed && !s(ticket, 'assigned_to') && (
             <Button type="button" className="w-full" disabled={claim.submitting} onClick={take}>{claim.submitting ? 'Taking…' : 'Take ownership'}</Button>
           )}
-          {claim.error && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-2 text-sm text-destructive">{claim.error}</p>}
-          {save.error && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-2 text-sm text-destructive">{save.fieldErrors.assigned_to ?? save.error}</p>}
+          {!managed && claim.error && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-2 text-sm text-destructive">{claim.error}</p>}
+          {!managed && save.error && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-2 text-sm text-destructive">{save.fieldErrors.assigned_to ?? save.error}</p>}
+          {!managed && <>
           <label htmlFor="t-status" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</label>
           <select id="t-status" value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 w-full border border-input bg-white px-2 text-sm">{STATUSES.map((v) => <option key={v} value={v}>{v}</option>)}</select>
           <label htmlFor="t-priority" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Priority</label>
@@ -123,6 +141,7 @@ function TicketHandling({ initial }: { initial: AdminRecord }) {
           <input id="t-assignee" value={assignee} maxLength={32} onChange={(e) => setAssignee(e.target.value)} placeholder="Unassigned" className="h-9 w-full border border-input bg-white px-2 text-sm" />
           <p className="text-xs text-muted-foreground">The assignee must be a portal user who can handle tickets. Resolving or closing notifies the requester; choose Open to reopen.</p>
           <Button type="button" className="w-full" disabled={save.submitting} onClick={apply}>{save.submitting ? 'Saving…' : 'Save changes'}</Button>
+          </>}
         </aside>
       </div>
     </>

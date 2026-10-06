@@ -61,7 +61,7 @@ function TicketDetail({ ticket: initial }: { ticket: HelpdeskTicket }) {
   const details: { label: string; value?: string }[] = [
     { label: 'Type', value: getTicketTypeLabel(ticket.type) },
     { label: 'Category', value: getTicketCategoryLabel(ticket.category) },
-    { label: 'Assigned To', value: ticket.assignedTo },
+    { label: 'Handled By', value: ticket.handledBy ?? ticket.assignedTo },
     { label: 'Location', value: ticket.location },
     { label: 'Device', value: ticket.deviceType },
     { label: 'Operating System', value: ticket.operatingSystem },
@@ -73,7 +73,7 @@ function TicketDetail({ ticket: initial }: { ticket: HelpdeskTicket }) {
       <header className="border border-t-2 border-border border-t-primary bg-white p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-sm text-muted-foreground">{ticket.reference}</span>
-          <TicketStatus status={ticket.status} />
+          <TicketStatus status={ticket.status} label={ticket.statusLabel} />
           <TicketPriority priority={ticket.priority} />
           {ticket.isSample && <PlaceholderTag>Sample</PlaceholderTag>}
         </div>

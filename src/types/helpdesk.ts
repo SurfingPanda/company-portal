@@ -46,6 +46,10 @@ export interface HelpdeskTicket {
   createdAt: string
   updatedAt: string
   assignedTo?: string
+  /** Hubly's own wording for the status (for example "In progress"), when IT handles the ticket in Hubly. */
+  statusLabel?: string
+  /** Who is handling it in Hubly. */
+  handledBy?: string
   location?: string
   deviceType?: string
   operatingSystem?: string

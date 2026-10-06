@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'permission' => \App\Http\Middleware\EnsurePermission::class,
+            'hubly.signed' => \App\Http\Middleware\VerifyHublySignature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

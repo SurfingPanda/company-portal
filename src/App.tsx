@@ -70,6 +70,7 @@ import UserCreatePage from '@/pages/admin/users/UserCreatePage'
 import UserDetailPage from '@/pages/admin/users/UserDetailPage'
 import UserEditPage from '@/pages/admin/users/UserEditPage'
 import AccessTemplatesPage from '@/pages/admin/users/AccessTemplatesPage'
+import ReportsPage from '@/pages/admin/hr/ReportsPage'
 import { AccessEditPage, AccessListPage } from '@/pages/admin/users/UserAccessPages'
 import UsersListPage from '@/pages/admin/users/UsersListPage'
 import Unauthorized from '@/pages/Unauthorized'
@@ -145,6 +146,7 @@ export default function App() {
           <Route path="/admin/users/create" element={<UserCreatePage />} />
           <Route path="/admin/users/:userId" element={<UserDetailPage />} />
           <Route path="/admin/users/:userId/edit" element={<UserEditPage />} />
+          <Route path="/admin/reports" element={<ReportsPage />} />
           <Route path="/admin/access" element={<AccessListPage />} />
           <Route path="/admin/access/templates" element={<AccessTemplatesPage />} />
           <Route path="/admin/access/:userId" element={<AccessEditPage />} />

@@ -13,7 +13,7 @@ const icons: Record<Status, LucideIcon> = {
 }
 
 /** Restrained status badge: icon plus text, so state never depends on colour alone. */
-export function TicketStatus({ status, className }: { status: Status; className?: string }) {
+export function TicketStatus({ status, label, className }: { status: Status; label?: string; className?: string }) {
   const Icon = icons[status]
   return (
     <span
@@ -29,7 +29,7 @@ export function TicketStatus({ status, className }: { status: Status; className?
       )}
     >
       <Icon className="size-3" aria-hidden="true" />
-      {ticketStatusLabels[status]}
+      {label ?? ticketStatusLabels[status]}
     </span>
   )
 }

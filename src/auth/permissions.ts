@@ -169,4 +169,5 @@ export const ADMIN_AREA_PERMISSIONS: readonly Permission[] = [
   'hr.departments.manage',
   'hr.company.manage',
   'policies.manage',
+  'reports.view',
 ]

@@ -10,4 +10,6 @@ Artisan::command('inspire', function () {
 
 // The morning summary email. The scheduler itself must run: `php artisan schedule:work` locally, or a cron entry that runs
 // `php artisan schedule:run` every minute on the server.
+// Tickets and replies that could not reach Hubly the first time are retried here.
+Schedule::command('portal:sync-hubly')->everyMinute()->withoutOverlapping();
 Schedule::command('portal:send-digests')->dailyAt('07:30')->timezone('Asia/Manila')->withoutOverlapping();

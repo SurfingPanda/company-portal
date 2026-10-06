@@ -12,6 +12,7 @@ use App\Http\Resources\HelpdeskTicketResource;
 use App\Http\Resources\RequestAttachmentResource;
 use App\Models\HelpdeskTicket;
 use App\Services\AttachmentStorage;
+use App\Services\Hubly;
 use App\Services\PortalEvents;
 use App\Services\ReferenceNumbers;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,6 +29,8 @@ use Illuminate\Validation\Rule;
  */
 class HelpdeskTicketController extends ApiController
 {
+    private const MANAGED_IN_HUBLY = 'Tickets are handled in Hubly. IT updates them there and the changes appear here.';
+
     private const SORTS = ['created_at' => 'created_at', 'updated_at' => 'updated_at', 'priority' => 'priority', 'status' => 'status'];
 
     public function index(Request $request): AnonymousResourceCollection
@@ -84,6 +87,7 @@ class HelpdeskTicketController extends ApiController
 
             return $ticket;
         });
+        \App\Services\Hubly::queue($ticket, 'ticket.created');
 
         return $this->created(new HelpdeskTicketResource($ticket->load('replies', 'attachments')));
     }
@@ -93,8 +97,11 @@ class HelpdeskTicketController extends ApiController
         $model = $this->find($ticket);
         Gate::authorize('reply', $model);
         abort_if(in_array($model->status, [TicketStatus::Closed, TicketStatus::Cancelled], true), 409);
+        // While Hubly is the master, IT answers in Hubly; only the requester replies here.
+        abort_if(Hubly::enabled() && $model->user_id !== $request->user()->getKey(), 409, self::MANAGED_IN_HUBLY);
 
-        DB::transaction(function () use ($model, $request) {
+        $reply = null;
+        DB::transaction(function () use ($model, $request, &$reply) {
             $reply = $model->replies()->make(['message' => $request->validated('message')]);
             $reply->forceFill(['helpdesk_ticket_id' => $model->getKey(), 'user_id' => $request->user()->getKey()])->save();
             $model->touch();
@@ -105,6 +112,10 @@ class HelpdeskTicketController extends ApiController
                 PortalEvents::notify($model->user, NotificationType::It, 'New reply on your ticket', "IT support replied to {$model->ticket_number}.", '/helpdesk/tickets/'.$model->ticket_number);
             }
         });
+
+        if ($reply !== null && $model->user_id === $request->user()->getKey()) {
+            Hubly::queue($model, 'ticket.reply', ['reply' => ['message' => $reply->message, 'author' => $request->user()->employee_id, 'created_at' => $reply->created_at?->toIso8601String()]]);
+        }
 
         return $this->created(new HelpdeskTicketResource($model->load('replies', 'attachments')));
     }
@@ -133,6 +144,7 @@ class HelpdeskTicketController extends ApiController
      */
     public function staffUpdate(Request $request, int $ticket): HelpdeskTicketResource
     {
+        abort_if(Hubly::enabled(), 409, self::MANAGED_IN_HUBLY);
         $model = HelpdeskTicket::query()->with('user', 'assignee')->findOrFail($ticket);
         $data = $request->validate([
             'status' => ['sometimes', Rule::enum(TicketStatus::class)],
@@ -182,6 +194,7 @@ class HelpdeskTicketController extends ApiController
      */
     public function claim(Request $request, int $ticket): HelpdeskTicketResource
     {
+        abort_if(Hubly::enabled(), 409, self::MANAGED_IN_HUBLY);
         $model = HelpdeskTicket::query()->with('user', 'assignee')->findOrFail($ticket);
         $me = $request->user();
         abort_if($model->assigned_to !== null && $model->assigned_to !== $me->getKey(), 409);
@@ -212,6 +225,7 @@ class HelpdeskTicketController extends ApiController
             $model->save();
             PortalEvents::activity($request->user(), 'ticket_cancelled', "Cancelled ticket {$model->ticket_number}", 'helpdesk_ticket', $model->getKey());
         });
+        Hubly::queue($model, 'ticket.cancelled');
 
         return new HelpdeskTicketResource($model->load('replies', 'attachments'));
     }

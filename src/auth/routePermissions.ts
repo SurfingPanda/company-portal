@@ -42,6 +42,7 @@ const routePermissions: { path: string; permission: Permission | readonly Permis
   { path: '/admin/hr/approvals', permission: 'hr.approvals.manage' },
   { path: '/admin/hr/company', permission: 'hr.company.manage' },
   { path: '/admin/users', permission: 'users.manage' },
+  { path: '/admin/reports', permission: 'reports.view' },
   { path: '/admin/access', permission: 'users.manage' },
   { path: '/admin/roles', permission: ['roles.view', 'users.manage'] },
   { path: '/admin/permissions', permission: ['roles.view', 'users.manage'] },

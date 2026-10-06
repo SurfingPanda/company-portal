@@ -19,7 +19,7 @@ export function TicketRow({ ticket }: { ticket: HelpdeskTicket }) {
       </TableCell>
       <TableCell className="hidden text-sm lg:table-cell">{getTicketCategoryLabel(ticket.category)}</TableCell>
       <TableCell>
-        <TicketStatus status={ticket.status} />
+        <TicketStatus status={ticket.status} label={ticket.statusLabel} />
       </TableCell>
       <TableCell className="hidden lg:table-cell">
         <TicketPriority priority={ticket.priority} />

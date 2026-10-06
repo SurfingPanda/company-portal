@@ -57,6 +57,19 @@ export const saveAccessTemplate = (t: AccessTemplate) => {
   return t.id ? adminApi.update<AccessTemplate>(`/api/admin/access-templates/${t.id}`, body) : adminApi.create<AccessTemplate>('/api/admin/access-templates', body)
 }
 export const deleteAccessTemplate = (id: number) => adminApi.remove(`/api/admin/access-templates/${id}`)
+export interface Tally { label: string; count: number }
+export interface ReportOverview {
+  generated_at: string
+  headcount: { total: number; active: number; on_leave: number; inactive: number; by_department: Tally[]; by_location: Tally[]; by_type: Tally[] }
+  tenure: Tally[]
+  movement: { month: string; label: string; hires: number; leavers: number }[]
+  accounts: { active: number; waiting_first_sign_in: number; disabled: number; without_record: number }
+  policies: { id: number; title: string; version: number; audience: string; required: number; acknowledged: number; outstanding: number; percent: number }[]
+}
+export const getReportOverview = (months: number) => api.get<ApiResponse<ReportOverview>>('/api/admin/reports/overview', { months }).then((r) => r.data)
+export interface HublyStatus { enabled: boolean; waiting: number; failed: number; last_sent_at: string | null; last_error: string | null }
+export const getHublyStatus = () => adminApi.get<HublyStatus>('/api/admin/hubly/status')
+export const retryHubly = () => adminApi.create<HublyStatus & { delivered: number }>('/api/admin/hubly/retry', {})
 export const getRoles = () => adminApi.get<AdminRole[]>('/api/admin/roles')
 export const getPermissionGroups = () => adminApi.get<PermissionGroup[]>('/api/admin/permissions')
 

@@ -36,6 +36,7 @@ export const adminNavigation: { top: AdminNavItem; groups: AdminNavGroup[] } = {
         { label: 'Employee Directory', href: '/admin/hr/employees', permissions: ['hr.directory.view', 'hr.directory.manage'] },
         { label: 'Departments', href: '/admin/hr/departments', permissions: ['hr.departments.manage'] },
         { label: 'Approval Routing', href: '/admin/hr/approvals', permissions: ['hr.approvals.manage'] },
+        { label: 'Reports', href: '/admin/reports', permissions: ['reports.view'] },
         { label: 'Policies', href: '/admin/policies', permissions: ['policies.manage'] },
         { label: 'Company Information', href: '/admin/hr/company', permissions: ['hr.company.manage'], end: true },
         { label: 'Company History', href: '/admin/hr/company/history', permissions: ['hr.company.manage'] },

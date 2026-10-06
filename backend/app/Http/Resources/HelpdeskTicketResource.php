@@ -25,6 +25,10 @@ class HelpdeskTicketResource extends JsonResource
             'asset_tag' => $this->asset_tag,
             'priority' => $this->priority->value,
             'status' => $this->status->value,
+            // Hubly's own wording for the status (for example "In progress") and who is handling it there. Null when not linked.
+            'status_label' => $this->external_status,
+            'handled_by' => $this->external_assignee,
+            'in_hubly' => $this->external_id !== null,
             'resolved_at' => $this->resolved_at?->toIso8601String(),
             'closed_at' => $this->closed_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
@@ -32,7 +36,7 @@ class HelpdeskTicketResource extends JsonResource
             'replies' => $this->whenLoaded('replies', fn () => $this->replies->map(fn ($reply) => [
                 'id' => $reply->id,
                 // "You" for the viewer's own replies; staff are not identified by account.
-                'author' => $reply->user_id === $request->user()?->getKey() ? 'You' : 'IT support',
+                'author' => $reply->user_id !== null && $reply->user_id === $request->user()?->getKey() ? 'You' : ($reply->author_name ? $reply->author_name.' (IT support)' : 'IT support'),
                 'message' => $reply->message,
                 'created_at' => $reply->created_at->toIso8601String(),
             ])->values()),

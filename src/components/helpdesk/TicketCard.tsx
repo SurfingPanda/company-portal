@@ -16,7 +16,7 @@ export function TicketCard({ ticket }: { ticket: HelpdeskTicket }) {
         <span className="block font-mono text-xs text-muted-foreground">{ticket.reference}</span>
         <span className="mt-0.5 block text-sm font-semibold text-primary">{ticket.subject}</span>
         <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <TicketStatus status={ticket.status} />
+          <TicketStatus status={ticket.status} label={ticket.statusLabel} />
           <span className="text-xs text-muted-foreground">{getTicketCategoryLabel(ticket.category)}</span>
         </span>
         <span className="mt-1 block text-xs text-muted-foreground">

@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\Admin\AdminRequestTypeController;
 use App\Http\Controllers\Api\Admin\AdminResourceController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\AccessTemplateController;
+use App\Http\Controllers\Api\HublyWebhookController;
+use App\Http\Controllers\Api\Admin\AdminReportController;
 use App\Http\Controllers\Api\Admin\Hr\AdminCompanyController;
 use App\Http\Controllers\Api\Admin\Hr\AdminDepartmentController;
 use App\Http\Controllers\Api\Admin\Hr\AdminDirectoryController;
@@ -57,6 +59,9 @@ use Illuminate\Support\Facades\Route;
 |   - Policies / scoped queries = ownership (another person's record answers 404)
 | Static segments (categories, featured, read-all …) are declared before `{id}` routes; ids are numeric only.
 */
+
+// Signed calls from Hubly (no session): the middleware checks the shared-secret signature.
+Route::post('integrations/hubly/events', [HublyWebhookController::class, 'receive'])->middleware(['hubly.signed', 'throttle:120,1']);
 
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
@@ -225,7 +230,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // =====================================================================================================================
     Route::prefix('admin')->middleware('throttle:admin')->group(function () {
         Route::get('dashboard', [AdminOverviewController::class, 'dashboard'])
-            ->middleware('permission:admin.access,policies.manage,hr.manage,hr.directory.view,hr.directory.manage,hr.departments.manage,hr.approvals.manage,hr.company.manage,users.manage,requests.manage,requests.hr-review,requests.team-review,requests.it-review,helpdesk.manage,announcements.manage,announcements.hr-manage,calendar.manage,documents.manage,documents.hr-manage,documents.it-manage,recruitment.manage,benefits.manage,resources.manage,resources.it-manage,forms.manage');
+            ->middleware('permission:admin.access,reports.view,policies.manage,hr.manage,hr.directory.view,hr.directory.manage,hr.departments.manage,hr.approvals.manage,hr.company.manage,users.manage,requests.manage,requests.hr-review,requests.team-review,requests.it-review,helpdesk.manage,announcements.manage,announcements.hr-manage,calendar.manage,documents.manage,documents.hr-manage,documents.it-manage,recruitment.manage,benefits.manage,resources.manage,resources.it-manage,forms.manage');
 
         Route::middleware('permission:users.manage')->group(function () {
             Route::get('users', [AdminUserController::class, 'index']);
@@ -242,6 +247,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
             Route::post('access-templates', [AccessTemplateController::class, 'store'])->middleware('throttle:writes');
             Route::put('access-templates/{template}', [AccessTemplateController::class, 'update'])->whereNumber('template')->middleware('throttle:writes');
             Route::delete('access-templates/{template}', [AccessTemplateController::class, 'destroy'])->whereNumber('template')->middleware('throttle:writes');
+        });
+
+        Route::middleware('permission:reports.view')->prefix('reports')->group(function () {
+            Route::get('overview', [AdminReportController::class, 'overview']);
+            Route::get('export/{type}', [AdminReportController::class, 'export'])->where('type', 'directory|headcount|policies')->middleware('throttle:writes');
         });
 
         Route::middleware('permission:roles.view,users.manage')->group(function () {
@@ -338,7 +348,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         });
     });
 
+    Route::get('admin/hubly/status', [HublyWebhookController::class, 'status'])->middleware('permission:helpdesk.manage');
+    Route::post('admin/hubly/retry', [HublyWebhookController::class, 'retry'])->middleware(['permission:helpdesk.manage', 'throttle:writes']);
     // Staff handling of helpdesk tickets (status, priority, assignee): IT and administrators only.
+    // While the Hubly link is on, Hubly is the master and these answer 409 (see HelpdeskTicketController).
     Route::post('helpdesk/tickets/{ticket}/claim', [HelpdeskTicketController::class, 'claim'])->whereNumber('ticket')->middleware(['permission:helpdesk.manage', 'throttle:writes']);
     Route::patch('helpdesk/tickets/{ticket}', [HelpdeskTicketController::class, 'staffUpdate'])->whereNumber('ticket')->middleware(['permission:helpdesk.manage', 'throttle:writes']);
 });
