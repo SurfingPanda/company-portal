@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/webp" href="/logo_main.webp" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eljin Corporation | Employee Portal</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet" />
+    <script>
+      // Applies saved display preferences before first paint to avoid a flash. Reads UI preferences only; fails quietly.
+      try {
+        var p = JSON.parse(localStorage.getItem('eljin-portal-preferences') || 'null');
+        var r = document.documentElement;
+        if (p && p.appearance && (p.appearance.theme === 'dark' || (p.appearance.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))) r.classList.add('dark');
+        else if (!p && matchMedia('(prefers-color-scheme: dark)').matches) r.classList.add('dark');
+        if (p && p.accessibility) {
+          if (p.accessibility.textSize === 'large') r.classList.add('text-large');
+          if (p.accessibility.reduceMotion === true) r.classList.add('reduce-motion');
+          if (p.accessibility.highContrast === true) r.classList.add('high-contrast');
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

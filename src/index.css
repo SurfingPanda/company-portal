@@ -1,0 +1,176 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Dark mode is switched by a `dark` class on <html> (set from Account Settings or the OS preference). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Eljin Corporation palette: deep navy, neutral grays, one muted gold accent. */
+:root {
+  --radius: 0.25rem;
+  --background: #f6f4ef;
+  --foreground: #1d2230;
+  --card: #ffffff;
+  --card-foreground: #1b2433;
+  --popover: #ffffff;
+  --popover-foreground: #1b2433;
+  --primary: #0d1b4c;
+  --primary-foreground: #ffffff;
+  --secondary: #ece9e1;
+  --secondary-foreground: #0d1b4c;
+  --muted: #ece9e1;
+  --muted-foreground: #615f58;
+  --accent: #efece4;
+  --accent-foreground: #0d1b4c;
+  --destructive: #b42318;
+  --border: #dcd8cd;
+  --input: #cbc6b8;
+  --ring: #0d1b4c;
+  --gold: #0b8a1d;
+  --navy-deep: #070f2e;
+  /* Text/lines on the always-dark navy bars (top bar, footer). Never changes with the theme. */
+  --on-navy: #ffffff;
+}
+
+/* Dark theme: same navy identity, neutral dark surfaces. `--color-white` is the surface colour behind every bg-white. */
+.dark {
+  color-scheme: dark;
+  --color-white: #151c31;
+  --background: #0c1222;
+  --foreground: #e3e6ee;
+  --card: #151c31;
+  --card-foreground: #e3e6ee;
+  --popover: #151c31;
+  --popover-foreground: #e3e6ee;
+  --primary: #b3c0f2;
+  --primary-foreground: #0c1630;
+  --secondary: #1d2640;
+  --secondary-foreground: #d5dcf5;
+  --muted: #1d2640;
+  --muted-foreground: #98a1b6;
+  --accent: #1d2744;
+  --accent-foreground: #d5dcf5;
+  --destructive: #f2877b;
+  --border: #2b3554;
+  --input: #3a4670;
+  --ring: #9fb0ee;
+  --gold: #46c35c;
+}
+
+/* Higher contrast: stronger borders, text and focus rings. Same palette. */
+.high-contrast {
+  --border: #6f6c63;
+  --input: #55524a;
+  --muted-foreground: #3a3832;
+  --ring: #000000;
+}
+.dark.high-contrast {
+  --border: #7f8bb0;
+  --input: #8f9bc0;
+  --muted-foreground: #c6cde0;
+  --ring: #ffffff;
+}
+.high-contrast :focus-visible {
+  outline-width: 3px;
+}
+
+/* Modest text-size increase: the rem scale grows, layouts stay intact. */
+html.text-large {
+  font-size: 112.5%;
+}
+
+/* Reduced motion: from the portal setting or the operating system. */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@theme inline {
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-navy-deep: var(--navy-deep);
+  --color-on-navy: var(--on-navy);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    overflow-x: hidden;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+/* Login page motion. Every animation is decorative and is flattened by the reduced-motion rules above. */
+@keyframes login-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes login-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes login-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes login-orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes login-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes login-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(320%); }
+}
+@keyframes login-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+.login-rise { animation: login-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: var(--d, 0s); }
+.login-fade { animation: login-fade 1.2s ease-out both; animation-delay: var(--d, 0s); }
+.login-grow { transform-origin: left; animation: login-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: var(--d, 0s); }
+.login-ring { stroke-dasharray: 1; stroke-dashoffset: 1; animation: login-draw 2.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; animation-delay: var(--d, 0s); }
+.login-orbit { transform-box: fill-box; transform-origin: center; animation: login-orbit var(--t, 140s) linear infinite; }
+.login-progress { animation: login-progress 1.1s ease-in-out infinite; }
+.login-shake { animation: login-shake 0.45s ease-in-out; }
